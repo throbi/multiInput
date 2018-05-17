@@ -5,11 +5,10 @@
 import React, { Component } from 'react';
 import Tooltip from "react-tooltip"
 import logo from './logo.svg';
-import SimpleStorage from "react-simple-storage";
 import InlineEdit from 'react-edit-inplace';
 import './App.css';
 
-const maxTodoLength = 50;
+const maxTextLength = 50;
 
 class App extends Component {
 
@@ -17,25 +16,30 @@ class App extends Component {
     super(props);
     this.state = {
       newItem: {
-        todo: "",
-        done: false
+        text: "_____________________________"
       },
-      list: []
+      list: [{
+      id: 1 + Math.random(),
+      value: {
+        text: "_____________________________"
+      }
+    }]
     };
 
-    this.todoUpdated = this.todoUpdated.bind(this);
+    this.textUpdated = this.textUpdated.bind(this);
+    this.onCancel = this.onCancel.bind(this);
+    this.onSave = this.onSave.bind(this);
   };
 
-  validateUpdatedTodo(updatedTodo){
+  validateUpdatedText(updatedText){
     Tooltip.hide();
-    return (updatedTodo.length > 0 && updatedTodo.length <= maxTodoLength);
+    return (updatedText.length > 0 && updatedText.length <= maxTextLength);
   };
 
   updateInput(value) {
     this.setState({
      "newItem": {
-        todo: value,
-        done: false
+        text: value
       }
     });
   };
@@ -45,8 +49,7 @@ class App extends Component {
     const newItem = {
       id: 1 + Math.random(),
       value: {
-        todo: this.state.newItem.todo.slice(),
-        done: false
+        text: this.state.newItem.text.slice()
       }
     };
 
@@ -60,8 +63,7 @@ class App extends Component {
     this.setState({
       list,
       newItem: {
-        todo: "",
-        done: false
+        text: "_____________________________"
       }
     });
   };
@@ -75,81 +77,70 @@ class App extends Component {
     this.setState({ list: updatedList });
   };
 
-  checkItem(id) {
-    // copy current list of items
-    const updatedList = [...this.state.list];
+  onCancel(){
+    alert("Cancel");
+  }
 
-    const currentItem = updatedList.filter(item => item.id === id)[0];
-    currentItem.value.done = !currentItem.value.done;
+  onSave(){
+    var savedItems = "Saving: ";
+    for(let i=0; i < this.state.list.length-1; i++){
+      savedItems += this.state.list[i].value.text;
+      if(i < (this.state.list.length-2)){
+        savedItems += ", "
+      }
+    }
+    alert(savedItems);
+  }
 
-    this.setState({ list: updatedList });
-    Tooltip.hide();
-  };
-
-  todoUpdated(updatedTodo) {
+  textUpdated(updatedText) {
     // TODO: update react-edit-inline to pass objects, too
-    const updatedTodoId = Object.keys(updatedTodo)[0];
-    const updatedTodoText = updatedTodo[updatedTodoId];
+    const updatedTextId = Object.keys(updatedText)[0];
+    const updatedTextText = updatedText[updatedTextId];
 
     // copy current list of items
     const updatedList = [...this.state.list];
 
-    const currentItem = updatedList.filter(item => item.id === parseFloat(updatedTodoId))[0];
-    currentItem.value.todo = updatedTodoText;
+    const currentItem = updatedList.filter(item => item.id === parseFloat(updatedTextId))[0];
+    currentItem.value.text = updatedTextText;
 
     this.setState({ list: updatedList });
     Tooltip.hide();
+
+    if(this.state.list[this.state.list.length-1].id == parseFloat(updatedTextId)){
+      this.addItem();
+    }
   };
 
   render() {
     return (
       <div className = "App">
 
-        <SimpleStorage parent = {this} />
-
         <header className = "App-header">
-          <img src = {logo} className = "App-logo" alt = "todo.react" />
+          <img src = {logo} className = "App-logo" alt = "text.react" />
           <div>
-            <span className = "App-title">todo.react </span> 
-            <span className = "App-intro">yet another todo web app</span>
+            <span className = "App-title">multi</span> 
+            <span className = "App-intro">input</span>
           </div>
         </header>
 
         <div className = "centerDiv">
-          <input
-            className = "newTodo"
-            type="text"
-            maxLength = {maxTodoLength}
-            placeholder="Enter new todo ..."
-            value={this.state.newItem.todo}
-            onChange={e => this.updateInput(e.target.value)}
-            onKeyPress={(e) => {if(e.key === 'Enter') {this.addItem()}}}/>
-
-          <button 
-            data-tip data-for="addButton"
-            onClick={() => {this.addItem(); Tooltip.hide();}}
-            disabled={!this.state.newItem.todo.length}> 
-            +
-          </button>
-
-          <Tooltip id="addButton" effect="solid" type="success">
-            Add todo to the list
-          </Tooltip>
-          <br/><br/>
+          <div class="leftDiv">
+          <p><b>Test</b></p>
+          </div>
           <ul>
             {this.state.list.map(item => {
               return (
                 <li key={item.id}>
+                  <div class="testAttribute">Test attribute</div>
                   <span data-tip data-for="inPlaceEdit">
                     <InlineEdit
-                      activeClassName = "editedTodo"
-                      validate = {this.validateUpdatedTodo}
-                      text = {item.value.todo}
+                      activeClassName = "editedText"
+                      validate = {this.validateUpdatedText}
+                      text = {item.value.text}
                       paramName = {"" + item.id}
-                      change = {this.todoUpdated}
+                      change = {this.textUpdated}
                       style = {{
-                        paddingRight: "10px",
-                        textDecoration: item.value.done ? "line-through" : "initial"
+                        paddingRight: "10px"
                       }} />
                   </span>
                   
@@ -157,35 +148,25 @@ class App extends Component {
                     click to edit
                   </Tooltip>
 
-                  <button 
-                    data-tip data-for={"doneButton" + item.id} 
-                    onClick={() => this.checkItem(item.id)}>
-                    {item.value.done ? "\u21bb" : "\u2714"}
-                  </button>
-
-                  {item.value.done ? 
-                    <Tooltip id={"doneButton" + item.id} effect="solid" type="error">
-                      mark "{item.value.todo}" as open
-                    </Tooltip> : 
-                    <Tooltip id={"doneButton" + item.id} effect="solid" type="success">
-                      mark "{item.value.todo}" as done
-                    </Tooltip>
-                  }
-
-                  <button 
+                  {
+                    this.state.list[this.state.list.length-1].id != item.id ?
+                    <span>
+                      <button 
                     data-tip data-for={"deleteButton" + item.id} 
                     onClick={() => this.deleteItem(item.id)}>
-                    -
-                  </button>
-
-                  <Tooltip id={"deleteButton" + item.id} effect="solid" type="warning">
-                    remove "{item.value.todo}" from the list, no undo possible
-                  </Tooltip>
+                      X
+                    </button> <Tooltip id={"deleteButton" + item.id} effect="solid" type="warning">
+                    remove "{item.value.text}" from the list, no undo possible
+                  </Tooltip></span>
+                    : ""
+                  }
                 </li>
               );
             })}
           </ul>
         </div>
+        <button onClick={()=>this.onSave()}>Save</button>
+        <button onClick={()=>this.onCancel()}>Cancel</button>
       </div>
     );
   };
